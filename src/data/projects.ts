@@ -82,7 +82,7 @@ export const projects = parseProjects([
       "Shaped a low-friction entry path so people can practice or race without creating an account.",
     ],
     stack: ["React", "Vite", "TypeScript", "Socket.IO", "PostgreSQL"],
-    status: "maintained",
+    status: "active",
     featured: true,
     demoUrl: "https://monkeytype4.devakinandan.xyz/",
   },
