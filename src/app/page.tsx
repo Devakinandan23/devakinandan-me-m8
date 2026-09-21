@@ -58,14 +58,8 @@ export default function HomePage() {
   return (
     <main className="home-shell">
       <section className="home-intro" aria-labelledby="home-title">
-        <div className="home-intro-marker" aria-hidden="true">
-          <span>01</span>
-          <span>Identity</span>
-        </div>
-
         <div className="home-intro-copy">
-          <p className="eyebrow">{siteIdentity.fullName}</p>
-          <h1 id="home-title">I build systems that make complex behavior easier to trust.</h1>
+          <h1 id="home-title">{siteIdentity.fullName}</h1>
           <p className="home-focus">{siteIdentity.focus}</p>
 
           <div className="home-biography">
@@ -87,10 +81,9 @@ export default function HomePage() {
 
       <section className="home-section" aria-labelledby="explore-title">
         <div className="home-section-heading">
-          <p className="home-section-index">02</p>
           <div>
-            <p className="eyebrow">Browse by format</p>
             <h2 id="explore-title">Explore work &amp; writing</h2>
+            <p className="section-description">Projects, practical notes, and longer engineering essays.</p>
           </div>
         </div>
 
@@ -114,9 +107,7 @@ export default function HomePage() {
 
       <section className="home-section" aria-labelledby="recent-title">
         <div className="home-section-heading">
-          <p className="home-section-index">03</p>
           <div>
-            <p className="eyebrow">Latest entries</p>
             <h2 id="recent-title">Recent writing</h2>
           </div>
         </div>
@@ -124,7 +115,7 @@ export default function HomePage() {
         <div className="recent-columns">
           <section aria-labelledby="recent-notes-title">
             <div className="recent-column-heading">
-              <h3 id="recent-notes-title">Notes</h3>
+              <h3 id="recent-notes-title">Recent notes</h3>
               <Link href="/notes">View all</Link>
             </div>
             <ol className="recent-list">
@@ -132,6 +123,9 @@ export default function HomePage() {
                 <li key={note.slug}>
                   <time dateTime={note.publishedAt}>{formatDate(note.publishedAt)}</time>
                   <Link href={`/notes/${note.slug}`}>{note.title}</Link>
+                  <ul className="content-tags" aria-label="Tags">
+                    {note.tags.map((tag) => <li key={tag}>{tag}</li>)}
+                  </ul>
                 </li>
               ))}
             </ol>
@@ -140,7 +134,7 @@ export default function HomePage() {
           {homepage.recentBlogs.length > 0 ? (
             <section aria-labelledby="recent-blogs-title">
               <div className="recent-column-heading">
-                <h3 id="recent-blogs-title">Blogs</h3>
+                <h3 id="recent-blogs-title">Recent blog posts</h3>
                 <Link href="/blogs">View all</Link>
               </div>
               <ol className="recent-list">
@@ -148,6 +142,9 @@ export default function HomePage() {
                   <li key={blog.slug}>
                     <time dateTime={blog.publishedAt}>{formatDate(blog.publishedAt)}</time>
                     <Link href={`/blogs/${blog.slug}`}>{blog.title}</Link>
+                    <ul className="content-tags" aria-label="Tags">
+                      {blog.tags.map((tag) => <li key={tag}>{tag}</li>)}
+                    </ul>
                   </li>
                 ))}
               </ol>
@@ -158,9 +155,7 @@ export default function HomePage() {
 
       <section className="home-section" aria-labelledby="featured-projects-title">
         <div className="home-section-heading home-section-heading-with-link">
-          <p className="home-section-index">04</p>
           <div>
-            <p className="eyebrow">Selected systems</p>
             <h2 id="featured-projects-title">Featured projects</h2>
           </div>
           <Link href="/projects">View all projects</Link>

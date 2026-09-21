@@ -15,7 +15,7 @@ export function buildHomepageData({ blogs, notes, projects }: HomepageSource) {
       notes: notes.length,
       projects: projects.length,
     },
-    featuredProjects: projects.filter((project) => project.featured).slice(0, 3),
+    featuredProjects: projects.filter((project) => project.featured),
     recentBlogs: blogs.slice(0, 3),
     recentNotes: notes.slice(0, 3),
   };

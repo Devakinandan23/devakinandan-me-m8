@@ -22,7 +22,6 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
   day: "2-digit",
   month: "short",
   timeZone: "UTC",
-  year: "numeric",
 });
 
 export function ArticleArchive({
@@ -33,17 +32,25 @@ export function ArticleArchive({
   eyebrow,
   title,
 }: ArticleArchiveProps) {
+  const years = [...new Set(articles.map((article) => article.publishedAt.slice(0, 4)))].sort().reverse();
   return (
     <main className="page-shell">
       <header>
         <p className="eyebrow">{eyebrow}</p>
-        <h1 className="page-title">{title}</h1>
+        <div className="archive-heading">
+          <h1 className="page-title">{title} <span className="archive-count">({articles.length})</span></h1>
+          <a className="rss-link" href="/rss.xml">RSS feed ↗</a>
+        </div>
         <p className="page-description">{description}</p>
       </header>
 
       {articles.length > 0 ? (
+        <div className="archive-years">
+        {years.map((year) => (
+        <section key={year} aria-labelledby={`year-${year}`}>
+        <h2 className="archive-year" id={`year-${year}`}>{year}</h2>
         <ol className="content-list">
-          {articles.map((article) => (
+          {articles.filter((article) => article.publishedAt.startsWith(year)).map((article) => (
             <li className="archive-card" key={article.slug}>
               <div className="archive-meta">
                 <time dateTime={article.publishedAt}>
@@ -52,9 +59,9 @@ export function ArticleArchive({
                 <span aria-hidden="true">·</span>
                 <span>{article.readingTimeMinutes} min read</span>
               </div>
-              <h2>
+              <h3>
                 <Link href={`${basePath}/${article.slug}`}>{article.title}</Link>
-              </h2>
+              </h3>
               <p>{article.description}</p>
               <ul aria-label="Tags" className="content-tags">
                 {article.tags.map((tag) => (
@@ -64,6 +71,9 @@ export function ArticleArchive({
             </li>
           ))}
         </ol>
+        </section>
+        ))}
+        </div>
       ) : (
         <section className="content-empty">
           <h2>{emptyState.title}</h2>

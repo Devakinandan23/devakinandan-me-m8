@@ -18,7 +18,7 @@ describe("homepage composition", () => {
     });
   });
 
-  it("limits recent lists and excludes unfeatured projects", () => {
+  it("limits recent lists and publishes every featured project", () => {
     const homepage = buildHomepageData({
       blogs: getAllBlogs(),
       notes: getAllNotes(),
@@ -27,10 +27,8 @@ describe("homepage composition", () => {
 
     expect(homepage.recentBlogs.length).toBeLessThanOrEqual(3);
     expect(homepage.recentNotes.length).toBeLessThanOrEqual(3);
-    expect(homepage.featuredProjects.length).toBeLessThanOrEqual(3);
-    expect(homepage.featuredProjects.every((project) => project.featured)).toBe(true);
-    expect(homepage.featuredProjects.some((project) => project.slug === "second-brain")).toBe(
-      false,
+    expect(homepage.featuredProjects).toEqual(
+      projects.filter((project) => project.featured),
     );
   });
 });

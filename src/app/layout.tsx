@@ -11,6 +11,7 @@ import { SiteHeader } from "@/components/site-header";
 import { siteIdentity } from "@/data/site-identity";
 
 import "./globals.css";
+import "./editorial.css";
 
 const themeScript = `
   (function () {
@@ -20,17 +21,6 @@ const themeScript = `
     var theme = stored === "dark" || stored === "light" ? stored : preferred;
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-
-    document.addEventListener("click", function (event) {
-      var target = event.target;
-      if (!(target instanceof Element) || !target.closest("[data-theme-toggle]")) return;
-
-      var nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-      document.documentElement.dataset.theme = nextTheme;
-      document.documentElement.style.colorScheme = nextTheme;
-
-      try { window.localStorage && window.localStorage.setItem("theme", nextTheme); } catch (_) {}
-    });
   })();
 `;
 
@@ -57,7 +47,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html data-scroll-behavior="smooth" lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

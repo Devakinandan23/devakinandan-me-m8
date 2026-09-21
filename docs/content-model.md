@@ -46,6 +46,7 @@ Derived fields:
 | `readingTimeMinutes` | Prose word count at 200 words per minute, rounded up; fenced and inline code excluded |
 
 Unknown frontmatter keys should fail validation. Strict schemas prevent silent typos such as `publishAt`.
+Every article body must contain non-whitespace content after its frontmatter.
 
 ## Slug rules
 

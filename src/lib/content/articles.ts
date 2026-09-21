@@ -78,12 +78,17 @@ export function parseArticleSource(
     throw contentError(kind, filePath, formatZodError(frontmatterResult.error));
   }
 
+  const body = parsed.content.trim();
+  if (!body) {
+    throw contentError(kind, filePath, "body must not be empty");
+  }
+
   return {
     ...frontmatterResult.data,
-    body: parsed.content.trim(),
+    body,
     filePath,
     kind,
-    readingTimeMinutes: calculateReadingTimeMinutes(parsed.content),
+    readingTimeMinutes: calculateReadingTimeMinutes(body),
     slug: slugResult.data,
   };
 }

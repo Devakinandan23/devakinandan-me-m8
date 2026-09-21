@@ -115,8 +115,9 @@ export const projects = parseProjects([
       "Built authenticated content, metadata ingestion, soft-delete, and public sharing APIs.",
     ],
     stack: ["Node.js", "Express", "TypeScript", "PostgreSQL", "Prisma", "Zod"],
-    status: "maintained",
-    featured: false,
+    status: "active",
+    featured: true,
     sourceUrl: "https://github.com/Devakinandan23/second-brain-backend",
+    demoUrl: "https://secondbrain.devakinandan.xyz/",
   },
 ]);

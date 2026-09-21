@@ -81,7 +81,7 @@ a:hover {
 a:focus-visible,
 button:focus-visible {
   border-radius: 0.18rem;
-  outline: 3px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline: 3px solid var(--accent);
   outline-offset: 0.2rem;
 }
 

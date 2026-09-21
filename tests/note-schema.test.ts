@@ -40,6 +40,14 @@ describe("parseNoteSource", () => {
     );
   });
 
+  it("rejects an empty article body", () => {
+    const source = validFrontmatter.replace("Body.", "");
+
+    expect(() => parseNoteSource("/content/notes/empty-note.mdx", source)).toThrow(
+      /Invalid note '.*empty-note\.mdx': body must not be empty/,
+    );
+  });
+
   it("rejects an update date before the publication date", () => {
     const source = validFrontmatter.replace(
       'publishedAt: "2026-09-21"',
