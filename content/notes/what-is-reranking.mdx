@@ -1,0 +1,40 @@
+---
+title: "Why does RAG need reranking after retrieval?"
+description: "A practical mental model for why retrieval candidates still need a more precise second ranking step."
+publishedAt: "2026-09-21"
+tags:
+  - rag
+  - retrieval
+draft: false
+---
+
+## Problem
+
+A retriever is optimized to search a large collection quickly. It returns the chunks that look most promising, but the first result order is not always the best order for answering the user's exact question.
+
+## Mental model
+
+Retrieval is the **shortlisting stage**. Reranking is the **careful comparison stage**.
+
+The retriever may reduce one million chunks to twenty candidates. A reranker then scores those twenty query–chunk pairs more precisely and keeps the best five for the language model.
+
+```python
+candidates = retriever.search(query, limit=20)
+ranked = reranker.rank(query, candidates)
+context = ranked[:5]
+```
+
+The first stage protects latency and cost. The second stage protects relevance.
+
+## What confused me
+
+I originally assumed vector similarity had already ranked the chunks, so reranking sounded like repeating the same work. It is not the same work: the first model retrieves broadly, while the second model can examine the query and each candidate together.
+
+## Gotcha
+
+Reranking cannot recover a relevant chunk that retrieval never returned. If recall is poor, first fix the candidate-generation stage: chunking, metadata filters, query rewriting, embeddings, or hybrid retrieval.
+
+## Remember
+
+**Retriever = fast candidate generation. Reranker = slower precision.** Use reranking when the cost of passing weak context to the language model is higher than the extra ranking latency.
+

@@ -1,0 +1,93 @@
+---
+title: "RAG quality is a pipeline problem, not a model choice"
+description: "A practical way to diagnose retrieval-augmented generation by separating ingestion, retrieval, ranking, and answer-generation failures."
+publishedAt: "2026-09-21"
+tags:
+  - rag
+  - retrieval
+  - evaluation
+draft: false
+---
+
+A weak RAG answer often triggers the wrong response: replace the embedding model, increase the chunk size, or switch to a larger language model. Those changes may help, but they are guesses until the failure is located.
+
+RAG is a pipeline. Each stage has a different responsibility, produces different evidence, and fails in a different way. Treating the system as one opaque prompt makes improvement slow and expensive.
+
+## Start with the failure boundary
+
+A useful diagnosis begins with one question: **did the system retrieve enough evidence to answer correctly?**
+
+If the answer is no, changing the final prompt cannot recover information that never reached the model. The investigation belongs in ingestion, query processing, retrieval, filtering, or reranking.
+
+If the answer is yes, the retrieval path may already be adequate. The failure is more likely in context construction, instructions, citation handling, or generation.
+
+That boundary separates two broad classes of failure:
+
+1. **Evidence failure:** the required information is missing or buried below the cutoff.
+2. **Reasoning failure:** the evidence is present, but the model uses it incorrectly.
+
+Without this split, teams tune multiple stages at once and lose the ability to explain why a result improved.
+
+## Ingestion determines what can be found
+
+Retrieval quality is capped before a query arrives. Poor parsing can discard headings, merge unrelated sections, split tables into meaningless fragments, or repeat headers across every chunk.
+
+Chunk size is not a universal constant. A short policy clause may need a small, precise chunk. A technical explanation may require surrounding paragraphs to preserve definitions and assumptions. The useful unit is not a fixed number of characters; it is the smallest unit that still carries enough meaning to answer likely questions.
+
+Metadata also matters. Source, document type, version, section, tenant, and access scope can prevent irrelevant candidates from entering the ranking stage. Metadata is not decorative bookkeeping. It is part of retrieval.
+
+## Retrieval should optimize recall first
+
+The first retrieval stage builds a candidate set. Its main job is to avoid missing relevant evidence.
+
+Dense retrieval is strong when the query and document express similar meaning with different words. Keyword retrieval is strong for exact identifiers, error codes, names, and rare terms. Neither dominates every query.
+
+Hybrid retrieval combines both signals so that semantic similarity does not erase exact matches and keyword overlap does not ignore paraphrases. The result is usually a larger candidate set that still needs ordering.
+
+```python
+dense = vector_store.search(query, limit=20)
+sparse = keyword_index.search(query, limit=20)
+candidates = reciprocal_rank_fusion(dense, sparse)
+```
+
+The correct candidate count depends on latency, reranker cost, and document diversity. Retrieving more is not automatically safer. Large candidate sets can add duplicates and increase the chance that weak context reaches the model.
+
+## Reranking protects precision
+
+Retrieval and reranking solve different problems. Retrieval searches a large collection quickly. A reranker performs a more expensive comparison between the query and a much smaller candidate set.
+
+This second stage is useful when the top retrieval positions are noisy even though relevant chunks are present somewhere in the candidate set. A cross-encoder reranker can inspect the query and candidate together, which is more precise than comparing independently produced embeddings.
+
+Reranking cannot fix missing evidence. If the relevant chunk never enters the candidate set, the reranker has nothing to promote. That is why recall must be measured before reranker quality.
+
+## Context construction is a separate design step
+
+Passing the top five chunks directly to the model is simple, but it can create duplicated, contradictory, or badly ordered context.
+
+A context builder may need to remove near-duplicates, preserve source boundaries, attach titles, order chunks by document structure, or enforce a token budget. It should also retain stable source identifiers so the answer can be traced back to evidence.
+
+The final prompt should state what the model must do when evidence is incomplete. “Answer only from the supplied context” is useful, but it does not replace evaluation. Models may still combine claims incorrectly or answer too confidently.
+
+## Evaluate stages, not impressions
+
+End-to-end answer quality matters, but it is a poor debugging signal on its own. A useful evaluation set records the question, expected evidence, acceptable answer, and any important refusal condition.
+
+Measure retrieval with questions such as:
+
+- Did at least one relevant chunk appear in the top candidates?
+- How high was the first relevant result?
+- Did reranking move relevant evidence upward?
+- Did filtering remove evidence that should have remained eligible?
+
+Then measure generation separately:
+
+- Is the answer supported by the retrieved context?
+- Does it include unsupported claims?
+- Does it admit when the evidence is insufficient?
+- Are citations attached to the correct statements?
+
+## The operating rule
+
+Do not ask, “Which model should we replace?” before asking, “Which stage failed, and what evidence proves it?”
+
+A durable RAG system is not created by one clever component. It comes from explicit stage boundaries, observable inputs and outputs, and evaluations that make regressions visible. Once the failure is located, the fix is usually smaller than a full-stack rewrite.

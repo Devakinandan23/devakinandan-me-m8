@@ -1,0 +1,93 @@
+---
+title: "Reliable agent workflows need explicit state"
+description: "Why production agent systems benefit from visible transitions, bounded tools, and deterministic recovery paths instead of open-ended loops."
+publishedAt: "2026-09-18"
+tags:
+  - agents
+  - reliability
+  - backend
+draft: false
+---
+
+An agent demo can look impressive while remaining difficult to operate. The model chooses a tool, observes a result, and continues until it believes the task is finished. That loop is flexible, but flexibility without boundaries creates a system that is hard to test and harder to recover.
+
+Production workflows need a clearer contract: what state exists, which transitions are legal, what each tool may change, and what happens when a step fails.
+
+## Conversation history is not application state
+
+Messages explain what happened, but they are a weak source of truth for workflow control. A model may summarize them differently, omit a detail, or interpret the same history in multiple ways.
+
+Application state should be explicit and typed. For a document-analysis workflow, it might include the current document, extracted claims, missing evidence, approval status, retry count, and final output.
+
+```ts
+type ReviewState = {
+  documentId: string;
+  claims: Claim[];
+  missingEvidence: string[];
+  status: "extracting" | "checking" | "awaiting_approval" | "complete" | "failed";
+  retries: number;
+};
+```
+
+The language model can propose updates, but the application decides whether those updates satisfy the state contract.
+
+## Transitions make behavior inspectable
+
+An open loop asks the model what to do next. A state machine narrows that question to the transitions allowed from the current state.
+
+For example, `extracting` may move to `checking` only after structured claims pass validation. `checking` may move to `awaiting_approval` when every material claim has evidence. A terminal failure may be reached after the retry budget is exhausted.
+
+This structure reduces accidental behavior. It also produces useful logs: the current state, attempted transition, validation result, and reason for failure.
+
+```text
+extracting -> checking -> awaiting_approval -> complete
+     |            |
+     +----------> failed
+```
+
+The graph does not remove model reasoning. It places reasoning inside an operational envelope that the rest of the system can understand.
+
+## Tools need narrow contracts
+
+Tool descriptions are part of the control plane. A tool named `manage_document` with a large untyped payload gives the model too much room to guess. Narrow tools make intent visible.
+
+Prefer operations such as `fetch_document`, `search_evidence`, and `save_review_draft`, each with validated inputs and a clear permission boundary. A read tool should not silently mutate data. A write tool should make its destination and effect obvious.
+
+Tool results also need structure. Returning a block of prose forces the model to parse application data from natural language. Returning stable fields lets the workflow validate the result before continuing.
+
+## Retries must be bounded and meaningful
+
+“Try again” is not a recovery strategy. A retry should happen only when the failure is likely to be transient or when the next attempt changes something material.
+
+Useful retry policies answer four questions:
+
+1. Which errors are retryable?
+2. How many attempts are allowed?
+3. What changes between attempts?
+4. What state is preserved if every attempt fails?
+
+Rate limits may justify exponential backoff. A schema validation error should usually return feedback to the model with a limited retry count. A permission error should stop immediately rather than burning tokens on the same forbidden action.
+
+Idempotency matters when tools create side effects. If a timeout occurs after a request reaches an external service, the workflow must know whether retrying could create a duplicate record.
+
+## Human approval is a state, not a pause
+
+When an action has financial, legal, security, or reputational consequences, approval should be represented explicitly. The workflow should store the proposed action and the exact payload awaiting review.
+
+After approval, execution should use that stored proposal rather than asking the model to regenerate it. Regeneration can produce a different action from the one the person approved.
+
+Approval also needs expiry and invalidation rules. If upstream data changes, an old approval may no longer be valid.
+
+## Observability follows the workflow boundary
+
+Useful traces should show more than prompts and responses. They should connect model calls to state transitions, tool invocations, validation failures, latency, token cost, and final outcome.
+
+This makes failures classifiable. A bad result may come from incorrect reasoning, a tool contract, stale state, missing permission, or an exhausted retry budget. Without those distinctions, every incident becomes “the model behaved strangely.”
+
+## Determinism belongs around the model
+
+Language models are probabilistic components. The surrounding system does not need to be equally unpredictable.
+
+Keep routing rules, validation, permissions, retry limits, and side-effect execution deterministic where possible. Use the model for tasks that benefit from interpretation and synthesis. Use ordinary code for invariants that must hold every time.
+
+The goal is not to eliminate autonomy. It is to make autonomy bounded, observable, and recoverable. An agent becomes a reliable software component only when the system can explain what it may do, what it did, and how to resume when it fails.

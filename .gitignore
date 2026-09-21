@@ -1,0 +1,19 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next
+/out
+
+# tests and tooling
+/coverage
+/.sites-runtime
+*.tsbuildinfo
+
+# local environment
+.env*
+!.env.example
+
+# OS and editor files
+.DS_Store
+*.swp
