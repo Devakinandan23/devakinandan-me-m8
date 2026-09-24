@@ -20,3 +20,7 @@ M8 complete — canonical page metadata, social metadata, a generated sitemap, a
 - M9: Vercel deployment and custom domain
 
 Read `AGENTS.md` before making changes.
+
+## Writing a note
+
+Copy [`docs/templates/note-template.mdx`](docs/templates/note-template.mdx) to `content/notes/<slug>.mdx`, then replace its frontmatter and prompts with your note. Keep `draft: true` while writing; set it to `false` when the note is ready to publish. The template uses the three-part structure described in [`docs/content-model.md`](docs/content-model.md).

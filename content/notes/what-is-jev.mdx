@@ -1,0 +1,36 @@
+---
+title: "What is Jev, and when should an agent use it?"
+description: "A practical mental model for Jev: a decision model that returns typed choices, scores, and probabilities instead of generated prose."
+publishedAt: "2026-09-24"
+tags:
+  - agents
+  - jev
+  - inference
+draft: false
+---
+
+## Why generating prose (ordinary written language) can be overkill for a decision
+
+Most language models are built to generate text. Give one a support ticket and ask it to choose a queue, and it may explain its reasoning, then return a label that software has to parse. Structured output can make that response easier to consume, but the model is still being asked to produce a string that follows a format.
+
+That works, but for a small decision inside an application, generating a paragraph can be unnecessary work.
+
+## Jev returns typed judgments instead of generated text
+
+Jev, from TypeSafe AI, is designed to return decisions directly. Give it a **state** (the context your program already has) and typed **questions**. Jev can choose among supplied options, score the state against a rubric, or estimate whether a statement is true. The result is a typed value and, for Choice and Score, a confidence estimate—not a block of prose to parse.
+
+For example, a support router could pass in a ticket and ask Jev to choose among `billing`, `account`, and `technical`. Ordinary code can then route the ticket based on the selected option and its confidence.
+
+The key distinction is the interface: a general language model writes an answer; Jev returns a bounded judgment that software can use. TypeSafe calls Jev a “System One” model and describes its questions as small, focused decisions. Jev is not a drop-in replacement for a model that needs to draft a reply, explain a complex plan, or invent open-ended content.
+
+## Where Jev fits in an agent workflow
+
+Many agent workflows already contain steps like “Which tool should run?”, “Does this document match?”, or “Should this request go to a person for review?” Those decisions can sit in ordinary code: ask a focused question, inspect the returned probability or confidence, then apply explicit thresholds and routing rules.
+
+That also makes the boundary clearer. Jev can help choose; your application still owns permissions, side effects, and what happens when confidence is low. For writing or extended reasoning, a generative model may still be the right tool.
+
+TypeSafe’s Doom demo is a useful illustration: Jev made choices from a structured text representation of the game state. The demonstration was about fast decisions in a live loop; it did not show Jev interpreting raw game images. That distinction matters when deciding which part of an agent should handle perception and which part should choose an action.
+
+The takeaway: **use generation when software needs new language; consider a decision model when software needs a bounded judgment.** Typed outputs can simplify the handoff, but confidence still needs to be checked against the task and evaluated in your own workflow.
+
+Sources: [TypeSafe AI introduction](https://docs.typesafe.ai/introduction) · [TypeSafe AI launch post](https://typesafe.ai/blog/introducing-system-one-models-and-jev)

@@ -57,16 +57,13 @@ Every article body must contain non-whitespace content after its frontmatter.
 
 ## Note body template
 
-Notes should usually contain:
+For a copy-ready starting point, use [`docs/templates/note-template.mdx`](templates/note-template.mdx). Its three sections follow this flow:
 
-1. Problem
-2. Mental model
-3. Concrete example
-4. What confused me
-5. Gotchas or failure cases
-6. Remember
+1. What people already know
+2. What is surprisingly new
+3. Why it matters in practice
 
-This is a writing aid, not a renderer requirement. Empty ritual headings are worse than a shorter clear note.
+This is a writing aid, not a renderer requirement. Adapt or remove sections when another structure makes the note clearer. Update the title, description, date, and tags; keep `draft: true` while writing and change it to `false` when ready to publish. Remove the example source link if the note has no source to cite.
 
 ## Blog body
 
