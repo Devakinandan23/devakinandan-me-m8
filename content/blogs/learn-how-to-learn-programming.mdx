@@ -1,0 +1,169 @@
+---
+title: "Learn how to learn programming"
+description: "A system that will help you understand programming better and move faster."
+publishedAt: "2026-09-26"
+tags:
+  - learning
+  - programming
+  - python
+draft: false
+---
+
+You finish a tutorial, close the tab, and suddenly cannot write the code again. It is tempting to call that failure. Usually, it means you practiced recognizing someone else's solution instead of making decisions yourself.
+
+You do not need to memorize every import, method name, or line of syntax. You need to understand what the program is trying to do, how data moves through it, where decisions happen, and what would break if an assumption changed. Documentation can recover an import. It cannot tell you why your program produced the wrong result unless you know what result to expect.
+
+Here is a way to turn a working example into something you actually understand.
+
+## Start with the mechanism
+
+Imagine a program that groups neighboring sentences into chunks. If two adjacent sentences look similar enough, they stay together. If they do not, a new chunk begins.
+
+Before reading code, describe the behavior:
+
+```text
+sentences
+  → compare each neighboring pair
+  → keep similar neighbors in the current chunk
+  → start a new chunk when similarity falls below a threshold
+  → save the final chunk
+```
+
+That outline is more valuable than remembering the name of a similarity function. It gives you a prediction you can check against the implementation.
+
+## Run a small, complete version
+
+Copy this into `chunk_learning.py` and run `python3 chunk_learning.py`. It uses only Python's standard library.
+
+```python
+import math
+import re
+from collections import Counter
+
+
+def word_counts(sentence):
+    return Counter(re.findall(r"[a-z0-9]+", sentence.lower()))
+
+
+def cosine_similarity(left, right):
+    left_counts = word_counts(left)
+    right_counts = word_counts(right)
+
+    dot_product = sum(
+        count * right_counts[word]
+        for word, count in left_counts.items()
+    )
+    left_length = math.sqrt(sum(count * count for count in left_counts.values()))
+    right_length = math.sqrt(sum(count * count for count in right_counts.values()))
+
+    if left_length == 0 or right_length == 0:
+        return 0.0
+    return dot_product / (left_length * right_length)
+
+
+def chunk_sentences(sentences, threshold=0.5):
+    if not sentences:
+        return []
+
+    chunks = []
+    current_chunk = [sentences[0]]
+
+    for previous, sentence in zip(sentences, sentences[1:]):
+        score = cosine_similarity(previous, sentence)
+        print(f"{score:.2f}: {previous} -> {sentence}")
+
+        if score >= threshold:
+            current_chunk.append(sentence)
+        else:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [sentence]
+
+    chunks.append(" ".join(current_chunk))
+    return chunks
+
+
+sentences = [
+    "API requests return user records.",
+    "API requests cache user records.",
+    "Garden plants need water.",
+    "Garden plants receive water.",
+]
+
+print(chunk_sentences(sentences))
+```
+
+The first pair shares most of its words, so its score is `0.80`. The middle pair shares none, so its score is `0.00`. The last pair scores `0.75`. With a threshold of `0.5`, the program produces two chunks: one about API requests and one about garden plants.
+
+This is deliberately a **word-overlap example**, not a production semantic chunker. It demonstrates the control flow without installing a model. Words such as “car” and “automobile” would score as different here even though they can mean the same thing. An embedding model can represent that kind of similarity, but the chunking loop still needs to make the same decisions.
+
+## Observe the state, not just the output
+
+The important variable is `current_chunk`. Walk through it by hand:
+
+```text
+Start:              [API sentence 1]
+Score 0.80:         [API sentence 1, API sentence 2]
+Score 0.00:         save the API chunk; start [garden sentence 1]
+Score 0.75:         [garden sentence 1, garden sentence 2]
+After the loop:     save the garden chunk
+```
+
+Now the final `chunks.append(...)` has a reason. The loop saves a chunk when it finds a boundary. No boundary comes after the last sentence, so the last chunk is still in memory when the loop ends.
+
+Notice another design choice: the code compares *neighbors*, not every sentence with every other sentence. If you change that comparison, you change the algorithm.
+
+## Modify one thing and predict the result
+
+Change `threshold=0.5` to `threshold=0.8`. The first pair still stays together because the condition uses `>=`. The garden pair, at `0.75`, now splits. Predict that before running the program. Then run it and check.
+
+Next, change the first two sentences so they discuss the same idea without reusing the same words. The score may fall even though a person sees a connection. That result tells you what the current similarity function measures: shared words, not meaning.
+
+This is the useful rhythm: **predict, change, run, explain the difference**. If you only run the original example, you learn what it does once. If you vary an input or rule, you learn which part of the program controls the behavior.
+
+## Break it on purpose
+
+Try `chunk_sentences([])`. It returns an empty list because the function checks for empty input before reading `sentences[0]`. Remove that guard and you will get an error. Now you know why the guard exists.
+
+Try a chain where each neighboring sentence overlaps with the next, but the first and last discuss different things. They can all land in one chunk. The code only checks adjacent pairs; it never asks whether the entire chunk remains coherent. That limitation follows directly from the mechanism.
+
+Try a new subject area and vary the threshold again. A number that looks reasonable for these four sentences is not a universal setting. Test it on the data your application will actually process.
+
+Breaking examples is not a detour from learning. It reveals the assumptions the happy path hides.
+
+## Rebuild the idea, then look up the syntax
+
+Close the example and write the outline from memory:
+
+```text
+handle empty input
+start a chunk with the first sentence
+for each neighboring pair:
+    calculate similarity
+    keep the sentence or save the chunk and start another
+save the final chunk
+return all chunks
+```
+
+If you can explain that outline, predict what a threshold change will do, and identify why an edge case fails, you understand the core program. Look up `Counter`, cosine similarity, or Python syntax when you need them. Use an LLM to help translate your outline into code, but inspect and test the result yourself.
+
+Then use the idea in a real task. For document retrieval, you might replace word overlap with sentence embeddings and evaluate whether the resulting chunks help retrieve the right passages. You would also need a proper sentence splitter; splitting text on every period breaks on abbreviations and decimal numbers. A working tutorial is the start of that investigation, not the end.
+
+The system is simple: **run, observe, predict, modify, break, explain, rebuild, use**. Repeat it with small programs. Speed follows when you spend less time trying to remember lines and more time understanding which decision each line makes.
+
+## Use a repeatable learning cycle
+
+When you encounter unfamiliar code, work through these steps:
+1. Run it. Get a working starting point.
+2. Observe it. Print intermediate values, such as the similarity scores and the contents of current_group.
+3. Modify it. Change threshold from 0.8 to 0.1, then to 0.99. Predict the result before each run.
+4. Break it. Try an empty list, mismatched sentence and vector counts, or a zero vector.
+5. Explain it. Close the file and describe the algorithm without Python syntax.
+6. Rebuild the outline. Write pseudocode, then use documentation to recover exact APIs.
+7. Use it. Put the idea into a real project and check whether it improves the result you care about.
+This cycle turns reading into experimentation. Each change tests whether your mental model matches what the program actually does.
+
+## Learn what to remember
+You do not need to remember the exact import path for a cosine similarity function. You should remember why similarity is calculated, which items are compared, and what the threshold controls.
+You should also be able to spot the limits of the example. It compares only neighboring sentences. A chain of similar neighbors can create one long group even when its first and last sentences differ. A threshold that works for these toy vectors may fail with another embedding model. Real text also needs careful sentence splitting, and a document-processing system must preserve source metadata when it creates chunks.
+Those observations are signs that you understand the program well enough to change and debug it.
+The goal is not to reproduce 40 lines perfectly from a blank editor. The goal is to know what those lines are trying to accomplish—and to be able to find your way when they do something unexpected.
